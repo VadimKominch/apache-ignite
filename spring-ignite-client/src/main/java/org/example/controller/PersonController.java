@@ -4,8 +4,6 @@ import org.example.model.Person;
 import org.example.service.PersonService;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/users")
 public class PersonController {

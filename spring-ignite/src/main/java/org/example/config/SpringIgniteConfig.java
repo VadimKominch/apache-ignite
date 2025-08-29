@@ -1,13 +1,16 @@
 package org.example.config;
 
-import com.zaxxer.hikari.HikariDataSource;
+import org.apache.ignite.Ignite;
+import org.apache.ignite.Ignition;
 import org.apache.ignite.cache.CacheMode;
 import org.apache.ignite.cache.store.jdbc.CacheJdbcPojoStoreFactory;
 import org.apache.ignite.cache.store.jdbc.JdbcType;
 import org.apache.ignite.cache.store.jdbc.JdbcTypeField;
 import org.apache.ignite.cache.store.jdbc.dialect.BasicJdbcDialect;
+import org.apache.ignite.cluster.ClusterState;
 import org.apache.ignite.configuration.CacheConfiguration;
-import org.apache.ignite.springframework.boot.autoconfigure.IgniteConfigurer;
+import org.apache.ignite.configuration.IgniteConfiguration;
+import org.apache.ignite.spi.metric.jmx.JmxMetricExporterSpi;
 import org.example.model.Person;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,30 +24,35 @@ import java.sql.Types;
 public class SpringIgniteConfig {
 
     @Bean
-    public IgniteConfigurer igniteInstance(HikariDataSource dataSource) {
-        return config -> {
-            CacheConfiguration<Integer, Person> cacheConfiguration = new CacheConfiguration<>("person-cache");
-            cacheConfiguration.setCacheMode(CacheMode.PARTITIONED);
+    public Ignite igniteInstance() {
+        IgniteConfiguration cfg = new IgniteConfiguration();
+        CacheConfiguration<Integer, Person> cacheConfiguration = new CacheConfiguration<>("person-cache");
+        cacheConfiguration.setCacheMode(CacheMode.PARTITIONED);
+        cacheConfiguration.setStatisticsEnabled(true);
+        cfg.setMetricExporterSpi(
+                new JmxMetricExporterSpi()
+        );
+        // CacheStore
+        CacheJdbcPojoStoreFactory<Integer, Person> factory = new CacheJdbcPojoStoreFactory<>();
+        factory.setDialect(new BasicJdbcDialect());
 
-            // CacheStore
-            CacheJdbcPojoStoreFactory<Integer, Person> factory = new CacheJdbcPojoStoreFactory<>();
-            factory.setDialect(new BasicJdbcDialect());
+        factory.setDataSourceFactory(getDataSourceFactory());
 
-            factory.setDataSourceFactory(getDataSourceFactory());
+        JdbcType employeeType = getJdbcType();
 
-            JdbcType employeeType = getJdbcType();
+        factory.setTypes(employeeType);
 
-            factory.setTypes(employeeType);
-
-            cacheConfiguration.setCacheStoreFactory(factory);
-            cacheConfiguration.setReadThrough(true);
-            cacheConfiguration.setWriteThrough(true);
-            cacheConfiguration.setWriteBehindEnabled(true);
-            cacheConfiguration.setWriteBehindFlushSize(2);
-            cacheConfiguration.setWriteBehindFlushFrequency(50000);
-            cacheConfiguration.setIndexedTypes(Integer.class, Person.class);
-            config.setCacheConfiguration(cacheConfiguration);
-        };
+        cacheConfiguration.setCacheStoreFactory(factory);
+        cacheConfiguration.setReadThrough(true);
+        cacheConfiguration.setWriteThrough(true);
+        cacheConfiguration.setWriteBehindEnabled(true);
+        cacheConfiguration.setWriteBehindFlushSize(2);
+        cacheConfiguration.setWriteBehindFlushFrequency(50000);
+        cacheConfiguration.setIndexedTypes(Integer.class, Person.class);
+        cfg.setCacheConfiguration(cacheConfiguration);
+        Ignite ignite = Ignition.start(cfg);
+        ignite.cluster().state(ClusterState.ACTIVE);
+        return ignite;
     }
 
     private static JdbcType getJdbcType() {

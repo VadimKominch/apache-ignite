@@ -2,9 +2,9 @@ package org.example.model;
 
 import org.apache.ignite.cache.query.annotations.QuerySqlField;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import java.io.Serial;
 import java.io.Serializable;
 

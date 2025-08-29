@@ -16,9 +16,9 @@ public class Runner {
         PersonService service = context.getBean(PersonService.class);
 
         Person employeeDTO = new Person();
-        employeeDTO.setId(1);
-        employeeDTO.setName("John");
-        employeeDTO.setCityId(1);
+        employeeDTO.setId(2);
+        employeeDTO.setName("Ivan");
+        employeeDTO.setCityId(2);
 
         service.savePerson(employeeDTO);
         Person personFromDb = service.findByName("John");

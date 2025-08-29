@@ -1,7 +1,8 @@
 package org.example.config;
 
+import org.apache.ignite.Ignite;
+import org.apache.ignite.Ignition;
 import org.apache.ignite.configuration.IgniteConfiguration;
-import org.apache.ignite.springframework.boot.autoconfigure.IgniteConfigurer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -10,9 +11,10 @@ public class SpringIgniteConfig {
 
     // fat client
     @Bean
-    public IgniteConfigurer igniteCfg() {
-        return config -> {
-            config.setClientMode(true);
-        };
+    public Ignite igniteClient() {
+        IgniteConfiguration cfg = new IgniteConfiguration();
+        cfg.setClientMode(true); // важно: клиентский режим
+
+        return Ignition.start(cfg);
     }
 }

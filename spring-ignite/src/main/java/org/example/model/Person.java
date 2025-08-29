@@ -1,7 +1,7 @@
 package org.example.model;
 
 import org.apache.ignite.cache.query.annotations.QuerySqlField;
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 import java.io.Serial;
 import java.io.Serializable;
