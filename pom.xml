@@ -13,6 +13,7 @@
         <module>ignite-cache</module>
         <module>postgres-test-containers</module>
         <module>spring-ignite-client</module>
+        <module>spring-ignite-thick-client</module>
     </modules>
 
     <properties>

@@ -1,6 +1,5 @@
 package org.example.config;
 
-import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.springframework.boot.autoconfigure.IgniteConfigurer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

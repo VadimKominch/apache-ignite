@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-@Component
+//@Component
 public class CertificateTask {
     private final Ignite ignite;
     private final RestTemplate restTemplate;
