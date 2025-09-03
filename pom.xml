@@ -13,6 +13,7 @@
         <module>ignite-cache</module>
         <module>postgres-test-containers</module>
         <module>spring-ignite-client</module>
+        <module>ignite-testing</module>
     </modules>
 
     <properties>
@@ -28,12 +29,19 @@
             <dependency>
                 <groupId>org.apache.ignite</groupId>
                 <artifactId>ignite-core</artifactId>
-                <version>${ignite.version}</version> <!-- или последняя стабильная -->
+                <version>${ignite.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.ignite</groupId>
                 <artifactId>ignite-indexing</artifactId>
                 <version>${ignite.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>3.5.5</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -9,9 +9,11 @@ import org.apache.ignite.cache.store.jdbc.JdbcTypeField;
 import org.apache.ignite.cache.store.jdbc.dialect.BasicJdbcDialect;
 import org.apache.ignite.cluster.ClusterState;
 import org.apache.ignite.configuration.CacheConfiguration;
+import org.apache.ignite.configuration.ClientConnectorConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.spi.metric.jmx.JmxMetricExporterSpi;
 import org.example.model.Person;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
@@ -24,8 +26,12 @@ import java.sql.Types;
 public class SpringIgniteConfig {
 
     @Bean
+    @Qualifier("server-node")
     public Ignite igniteInstance() {
         IgniteConfiguration cfg = new IgniteConfiguration();
+        ClientConnectorConfiguration clientCfg = new ClientConnectorConfiguration();
+        cfg.setClientConnectorConfiguration(clientCfg);
+
         CacheConfiguration<Integer, Person> cacheConfiguration = new CacheConfiguration<>("person-cache");
         cacheConfiguration.setCacheMode(CacheMode.PARTITIONED);
         cacheConfiguration.setStatisticsEnabled(true);
