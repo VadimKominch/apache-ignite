@@ -14,6 +14,7 @@
         <module>postgres-test-containers</module>
         <module>spring-ignite-client</module>
         <module>ignite-testing</module>
+        <module>spring-ignite-thick-client</module>
     </modules>
 
     <properties>
