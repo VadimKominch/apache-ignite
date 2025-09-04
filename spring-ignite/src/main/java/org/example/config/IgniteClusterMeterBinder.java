@@ -25,7 +25,6 @@ public class IgniteClusterMeterBinder implements MeterBinder {
 
         // ==== Cache Metrics ====
         Collection<String> cacheNames = ignite.cacheNames();
-
         for (String cacheName : cacheNames) {
             IgniteCache<?,?> cache = ignite.cache(cacheName);
             Tag cacheTag = Tag.of("cache", cacheName);
