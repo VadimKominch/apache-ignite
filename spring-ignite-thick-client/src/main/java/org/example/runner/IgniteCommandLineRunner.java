@@ -20,6 +20,7 @@ public class IgniteCommandLineRunner implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
+        ignite.cache("person-cache").metrics().
         System.out.println("Executing compute task command line runner");
         IgniteCompute compute = ignite.compute();
         List<PrintTask> computeList = new ArrayList<>();
