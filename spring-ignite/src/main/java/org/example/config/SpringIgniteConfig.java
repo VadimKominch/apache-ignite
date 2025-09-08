@@ -7,6 +7,9 @@ import org.apache.ignite.cache.store.jdbc.JdbcType;
 import org.apache.ignite.cache.store.jdbc.JdbcTypeField;
 import org.apache.ignite.cache.store.jdbc.dialect.BasicJdbcDialect;
 import org.apache.ignite.configuration.CacheConfiguration;
+import org.apache.ignite.configuration.ClientConnectorConfiguration;
+import org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi;
+import org.apache.ignite.spi.discovery.tcp.ipfinder.multicast.TcpDiscoveryMulticastIpFinder;
 import org.apache.ignite.springframework.boot.autoconfigure.IgniteConfigurer;
 import org.example.model.Person;
 import org.springframework.context.annotation.Bean;
@@ -23,6 +26,10 @@ public class SpringIgniteConfig {
     @Bean
     public IgniteConfigurer igniteInstance(HikariDataSource dataSource) {
         return config -> {
+//            TcpDiscoverySpi spi = new TcpDiscoverySpi();
+//            var clientConnectionConfiguration = new ClientConnectorConfiguration();
+//            spi.setIpFinder(new TcpDiscoveryKubernetesIpFinder());
+//            config.setDiscoverySpi(spi);
             CacheConfiguration<Integer, Person> cacheConfiguration = new CacheConfiguration<>("person-cache");
             cacheConfiguration.setCacheMode(CacheMode.PARTITIONED);
 
