@@ -20,14 +20,22 @@ public class IgniteCommandLineRunner implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        ignite.cache("person-cache").metrics().
+        var key = ignite.binary().builder(Object.class.getSimpleName())
+                .setField("iteration", 1)
+                .build();
+        var value = ignite.binary().builder(Object.class.getSimpleName())
+                .setField("element", "elementStr")
+                .setField("exception","exception")
+                .build();
+        ignite.getOrCreateCache("errors").put(key,value);
+
         System.out.println("Executing compute task command line runner");
         IgniteCompute compute = ignite.compute();
         List<PrintTask> computeList = new ArrayList<>();
         for (String word : "Print words on different cluster nodes".split(" ")) {
             computeList.add(new PrintTask(word));
         }
-        String result = ignite.compute().call(computeList).stream().map(String::valueOf).collect(Collectors.joining(" "));
+        String result = compute.call(computeList).stream().map(String::valueOf).collect(Collectors.joining(" "));
         System.out.println("Computing result is " + result);
     }
 }
