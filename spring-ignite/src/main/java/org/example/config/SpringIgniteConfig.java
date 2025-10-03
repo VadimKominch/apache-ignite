@@ -10,6 +10,7 @@ import org.apache.ignite.cache.store.jdbc.dialect.BasicJdbcDialect;
 import org.apache.ignite.cluster.ClusterState;
 import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.configuration.ClientConnectorConfiguration;
+import org.apache.ignite.configuration.DeploymentMode;
 import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.spi.metric.jmx.JmxMetricExporterSpi;
 import org.example.model.Person;
@@ -56,6 +57,10 @@ public class SpringIgniteConfig {
         cacheConfiguration.setWriteBehindFlushFrequency(50000);
         cacheConfiguration.setIndexedTypes(Integer.class, Person.class);
         cfg.setCacheConfiguration(cacheConfiguration);
+
+        cfg.setPeerClassLoadingEnabled(true);
+        cfg.setDeploymentMode(DeploymentMode.CONTINUOUS);
+
         Ignite ignite = Ignition.start(cfg);
         ignite.cluster().state(ClusterState.ACTIVE);
         return ignite;
