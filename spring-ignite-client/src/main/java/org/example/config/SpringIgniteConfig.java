@@ -43,8 +43,8 @@ public class SpringIgniteConfig {
     public IgniteClient igniteClient() {
         ClientConfiguration cfg = new ClientConfiguration();
         cfg.setAddresses(
-                "10.203.32.51:10800",
-                "172.25.224.1:10800",
+//                "10.203.32.51:10800",
+//                "172.25.224.1:10800",
                 "localhost:10800");
         return Ignition.startClient(cfg);
     }
