@@ -2,7 +2,6 @@ package org.example.runner;
 
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCompute;
-import org.example.ignite.service.MyCustomService;
 import org.example.task.PrintTask;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
