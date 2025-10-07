@@ -49,6 +49,8 @@ public class IgniteCommandLineRunner implements CommandLineRunner {
         ScanQuery<Integer,Person> scanQuery = new ScanQuery<>((k,v) -> !v.getName().isEmpty());
 
         List<Person> personList = new ArrayList<>();
+
+//        try(QueryCursor<AffinityKey<List<Long>>,List<List>> cursor = cache.query(scanQuery)) {
         try(QueryCursor<Cache.Entry<Integer, Person>> cursor = cache.query(scanQuery)) {
             Iterator<Cache.Entry<Integer, Person>> iterator = cursor.iterator();
             while (iterator.hasNext()) {
