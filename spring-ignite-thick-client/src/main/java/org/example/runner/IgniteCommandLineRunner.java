@@ -5,7 +5,9 @@ import org.apache.ignite.IgniteCache;
 import org.apache.ignite.IgniteCompute;
 import org.apache.ignite.cache.query.QueryCursor;
 import org.apache.ignite.cache.query.ScanQuery;
+import org.apache.ignite.services.ServiceConfiguration;
 import org.example.model.Person;
+import org.example.service.MyCustomService;
 import org.example.task.PrintTask;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
@@ -44,7 +46,8 @@ public class IgniteCommandLineRunner implements CommandLineRunner {
         String result = compute.call(computeList).stream().map(String::valueOf).collect(Collectors.joining(" "));
         System.out.println("Computing result is " + result);
 
-//        ignite.services().deployClusterSingleton("eventHandlerService", new MyCustomService());
+        System.out.println("Topology nodes size is " + ignite.cluster().nodes().size());
+        ignite.services().deploy(getServiceConfig());
         IgniteCache<Integer, Person> cache = ignite.cache("person-cache");
         ScanQuery<Integer,Person> scanQuery = new ScanQuery<>((k,v) -> !v.getName().isEmpty());
 
@@ -59,5 +62,13 @@ public class IgniteCommandLineRunner implements CommandLineRunner {
             }
         }
         System.out.println();
+    }
+
+    private ServiceConfiguration getServiceConfig() {
+        ServiceConfiguration cfg = new ServiceConfiguration();
+        cfg.setName("eventHandlerService");
+        cfg.setMaxPerNodeCount(1);
+        cfg.setService(new MyCustomService());
+        return cfg;
     }
 }

@@ -12,6 +12,7 @@ import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.configuration.ClientConnectorConfiguration;
 import org.apache.ignite.configuration.DeploymentMode;
 import org.apache.ignite.configuration.IgniteConfiguration;
+import org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi;
 import org.apache.ignite.spi.metric.jmx.JmxMetricExporterSpi;
 import org.example.model.Person;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -60,7 +61,8 @@ public class SpringIgniteConfig {
 
         cfg.setPeerClassLoadingEnabled(true);
         cfg.setDeploymentMode(DeploymentMode.CONTINUOUS);
-
+        cfg.setDiscoverySpi(new TcpDiscoverySpi());
+        Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
         Ignite ignite = Ignition.start(cfg);
         ignite.cluster().state(ClusterState.ACTIVE);
         return ignite;
