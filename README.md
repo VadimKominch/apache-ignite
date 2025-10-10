@@ -17,6 +17,12 @@
 
 ---
 
+## DONE
+- Cache storage(binary/non-binary)
+- Compute Tasks
+- Service deployment
+- Messaging
+
 ## Running
 
 Before running need to add VM options for env of JAva 17
