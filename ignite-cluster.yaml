@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ignite
+  namespace: ignite
+  labels:
+    app: ignite
+spec:
+  clusterIP: None
+  ports:
+    - port: 47500
+      name: comm
+    - port: 47100
+      name: discovery
+    - port: 10800
+      name: thinclient
+  selector:
+    app: ignite
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ignite
+  namespace: ignite
+spec:
+  serviceName: ignite
+  replicas: 3
+  selector:
+    matchLabels:
+      app: ignite
+  template:
+    metadata:
+      labels:
+        app: ignite
+    spec:
+      containers:
+        - name: ignite
+          image: apacheignite/ignite:latest
+          ports:
+            - containerPort: 47500 # communication
+            - containerPort: 47100 # discovery
+            - containerPort: 10800 # thin client port
+          env:
+            - name: OPTION_LIBS
+              value: ignite-kubernetes,ignite-rest-http
+            - name: IGNITE_QUIET
+              value: "false"
+          volumeMounts:
+            - name: ignite-storage
+              mountPath: /data
+  volumeClaimTemplates:
+    - metadata:
+        name: ignite-storage
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi

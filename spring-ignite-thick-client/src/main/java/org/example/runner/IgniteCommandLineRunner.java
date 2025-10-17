@@ -1,12 +1,11 @@
 package org.example.runner;
 
-import org.apache.ignite.Ignite;
-import org.apache.ignite.IgniteCache;
-import org.apache.ignite.IgniteCompute;
-import org.apache.ignite.IgniteDataStreamer;
+import org.apache.ignite.*;
 import org.apache.ignite.binary.BinaryObject;
 import org.apache.ignite.cache.query.QueryCursor;
 import org.apache.ignite.cache.query.ScanQuery;
+import org.apache.ignite.configuration.CollectionConfiguration;
+import org.apache.ignite.internal.processors.cache.CacheStoppedException;
 import org.apache.ignite.services.ServiceConfiguration;
 import org.example.model.Person;
 import org.example.service.MyCustomService;
@@ -17,7 +16,7 @@ import org.springframework.stereotype.Component;
 
 import javax.cache.Cache;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -54,6 +53,7 @@ public class IgniteCommandLineRunner implements CommandLineRunner {
                 .setField("exception","exception")
                 .build();
         ignite.getOrCreateCache("errors").put(key,value);
+        ignite.getOrCreateCache("errors").put(1,1);
         // alternative for put a batch to cache
         final IgniteDataStreamer<Integer, Data> dataStreamer = ignite.dataStreamer("errors");
 
@@ -77,10 +77,42 @@ public class IgniteCommandLineRunner implements CommandLineRunner {
         }
     }
 
+    private IgniteQueue<Integer> createQueue(String name) {
+         return ignite.queue(name,0,new CollectionConfiguration());
+    }
+
     @Override
     public void run(String... args) throws Exception {
-        putBinaryToCache();
-        deployService();
+//        putBinaryToCache();
+//        deployService();
+        boolean recreate = false;
+        IgniteQueue<Integer> intQueue = createQueue("TempQueue");
+
+        while (!Thread.currentThread().isInterrupted()) {
+            try {
+                Thread.sleep(5000);
+                intQueue.take();
+            } catch (IllegalStateException e) {
+                if (e.getCause() instanceof CacheStoppedException exception) {
+                    Collection<String> caches = ignite.cacheNames().stream().filter(el -> el.contains("datastructures")).toList();
+                    ignite.resetLostPartitions(caches);
+                    recreate = true;
+                }
+//                System.out.println("queue was removed: "+ intQueue.removed()); //in case of reconnecting will always be false
+            } catch (Exception e) {
+                System.out.println("common exception");
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException ie) {
+                    System.out.println("Before break");
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+            if(recreate)
+                intQueue = createQueue("TempQueue");
+        }
+        System.out.println("Command line runner");
     }
 
     private ServiceConfiguration getServiceConfig() {
