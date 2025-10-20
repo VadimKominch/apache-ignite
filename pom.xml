@@ -14,6 +14,7 @@
         <module>spring-ignite-client</module>
         <module>ignite-testing</module>
         <module>spring-ignite-thick-client</module>
+        <module>inmemory-server-node</module>
     </modules>
 
     <properties>

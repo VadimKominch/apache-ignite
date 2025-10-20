@@ -18,14 +18,17 @@ import javax.cache.Cache;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 @Component
 public class IgniteCommandLineRunner implements CommandLineRunner {
     private final Ignite ignite;
+    private final Supplier<Void> actionToBeDone;
 
-    public IgniteCommandLineRunner(Ignite ignite) {
+    public IgniteCommandLineRunner(Ignite ignite, Supplier<Void> actionToBeDone) {
         this.ignite = ignite;
+        this.actionToBeDone = actionToBeDone;
     }
 
     private void computeTask() {
@@ -91,14 +94,14 @@ public class IgniteCommandLineRunner implements CommandLineRunner {
         while (!Thread.currentThread().isInterrupted()) {
             try {
                 Thread.sleep(5000);
-                intQueue.take();
+                actionToBeDone.get();
             } catch (IllegalStateException e) {
                 if (e.getCause() instanceof CacheStoppedException exception) {
-                    Collection<String> caches = ignite.cacheNames().stream().filter(el -> el.contains("datastructures")).toList();
-                    ignite.resetLostPartitions(caches);
+//                    Collection<String> caches = ignite.cacheNames().stream().filter(el -> el.contains("datastructures")).toList();
+//                    ignite.resetLostPartitions(caches);
                     recreate = true;
                 }
-//                System.out.println("queue was removed: "+ intQueue.removed()); //in case of reconnecting will always be false
+                System.out.println("queue was removed: "+ intQueue.removed()); //in case of reconnecting will always be false
             } catch (Exception e) {
                 System.out.println("common exception");
                 try {
@@ -111,8 +114,9 @@ public class IgniteCommandLineRunner implements CommandLineRunner {
             }
             if(recreate)
                 intQueue = createQueue("TempQueue");
+                recreate = false;
         }
-        System.out.println("Command line runner");
+        System.out.println("Command line runner execution finished");
     }
 
     private ServiceConfiguration getServiceConfig() {

@@ -28,6 +28,7 @@ public class SpringIgniteConfig {
     @Bean
     @Qualifier("client-node")
     public Ignite igniteClient(IgniteConfiguration cfg) {
+        System.setProperty("IGNITE_METRICS_LOG_FREQUENCY", "0"); // stop logging spam for client node
         return Ignition.start(cfg);
     }
 
