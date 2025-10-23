@@ -16,17 +16,18 @@ import org.springframework.stereotype.Component;
 
 import javax.cache.Cache;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.function.Supplier;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 @Component
 public class IgniteCommandLineRunner implements CommandLineRunner {
     private final Ignite ignite;
-    private final Supplier<Void> actionToBeDone;
+    private final Consumer<IgniteQueue<Integer>> actionToBeDone;
 
-    public IgniteCommandLineRunner(Ignite ignite, Supplier<Void> actionToBeDone) {
+    public IgniteCommandLineRunner(Ignite ignite, Consumer<IgniteQueue<Integer>> actionToBeDone) {
         this.ignite = ignite;
         this.actionToBeDone = actionToBeDone;
     }
@@ -81,7 +82,8 @@ public class IgniteCommandLineRunner implements CommandLineRunner {
     }
 
     private IgniteQueue<Integer> createQueue(String name) {
-         return ignite.queue(name,0,new CollectionConfiguration());
+        System.out.println("Creating queue or getting reference to it");
+        return ignite.queue(name,0,new CollectionConfiguration());
     }
 
     @Override
@@ -89,21 +91,36 @@ public class IgniteCommandLineRunner implements CommandLineRunner {
 //        putBinaryToCache();
 //        deployService();
         boolean recreate = false;
+        ARTExceptionLogManager logManager = new ARTExceptionLogManager(); // replace with ArtExceptionLogManager
         IgniteQueue<Integer> intQueue = createQueue("TempQueue");
 
         while (!Thread.currentThread().isInterrupted()) {
             try {
                 Thread.sleep(5000);
-                actionToBeDone.get();
+                actionToBeDone.accept(intQueue);
+                logManager.clear();
             } catch (IllegalStateException e) {
                 if (e.getCause() instanceof CacheStoppedException exception) {
 //                    Collection<String> caches = ignite.cacheNames().stream().filter(el -> el.contains("datastructures")).toList();
 //                    ignite.resetLostPartitions(caches);
+                    System.out.println("Cache was stopped. Queue need to be recreated");
                     recreate = true;
                 }
-                System.out.println("queue was removed: "+ intQueue.removed()); //in case of reconnecting will always be false
+
+                //in case of restart will always be false
+                if( !logManager.contains(e)) {
+                    if(intQueue.removed()) {
+                        recreate = true;
+                    }
+                    System.out.println(e.getMessage());
+                }
+                logManager.add(e);
             } catch (Exception e) {
-                System.out.println("common exception");
+                if(!logManager.contains(e)) {
+                    System.out.println(e.getClass());
+                    System.out.println(e.getMessage());
+                    logManager.add(e);
+                }
                 try {
                     Thread.sleep(5000);
                 } catch (InterruptedException ie) {
@@ -112,11 +129,20 @@ public class IgniteCommandLineRunner implements CommandLineRunner {
                     break;
                 }
             }
-            if(recreate)
+
+            if(recreate) {
+                Thread.sleep(15000);
                 intQueue = createQueue("TempQueue");
                 recreate = false;
+                logManager.clear();
+            }
         }
         System.out.println("Command line runner execution finished");
+    }
+
+    private void reconnectOnClientDisconnect(IgniteClientDisconnectedException e) {
+        IgniteClientDisconnectedException cause = (IgniteClientDisconnectedException) e.getCause();
+        cause.reconnectFuture().get();
     }
 
     private ServiceConfiguration getServiceConfig() {
@@ -125,5 +151,25 @@ public class IgniteCommandLineRunner implements CommandLineRunner {
         cfg.setMaxPerNodeCount(1);
         cfg.setService(new MyCustomService());
         return cfg;
+    }
+}
+
+class ARTExceptionLogManager {
+    private final Set<Exception> includedExceptions;
+
+    public ARTExceptionLogManager() {
+        this.includedExceptions = ConcurrentHashMap.newKeySet();
+    }
+
+    public void add(Exception ex) {
+        includedExceptions.add(ex);
+    }
+
+    public boolean contains(Exception ex) {
+        return includedExceptions.contains(ex);
+    }
+
+    public void clear() {
+        includedExceptions.clear();
     }
 }

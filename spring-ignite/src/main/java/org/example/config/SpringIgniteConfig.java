@@ -1,5 +1,6 @@
 package org.example.config;
 
+import jakarta.annotation.PreDestroy;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.Ignition;
 import org.apache.ignite.cache.CacheMode;
@@ -26,6 +27,7 @@ import java.sql.Types;
 
 @Configuration
 public class SpringIgniteConfig {
+    private Ignite ignite;
 
     @Bean
     @Qualifier("server-node")
@@ -63,9 +65,16 @@ public class SpringIgniteConfig {
         cfg.setDeploymentMode(DeploymentMode.CONTINUOUS);
         cfg.setDiscoverySpi(new TcpDiscoverySpi());
         Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
-        Ignite ignite = Ignition.start(cfg);
+        ignite = Ignition.start(cfg);
         ignite.cluster().state(ClusterState.ACTIVE);
         return ignite;
+    }
+
+    @PreDestroy
+    public void stopIgnite() {
+        if(ignite != null) {
+            ignite.close();
+        }
     }
 
     private static JdbcType getJdbcType() {

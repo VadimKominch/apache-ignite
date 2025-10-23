@@ -5,11 +5,9 @@ import org.apache.ignite.IgniteCache;
 import org.apache.ignite.Ignition;
 import org.apache.ignite.cache.CacheMode;
 import org.apache.ignite.configuration.CacheConfiguration;
-import org.apache.ignite.configuration.IgniteConfiguration;
 
 public class Runner {
     public static void main(String[] args) {
-        IgniteConfiguration igniteConfiguration = new IgniteConfiguration();
 
         try(Ignite ignite = Ignition.start()) {
 
