@@ -75,7 +75,7 @@ public class ServerDisapearTest {
                     queue.take();
                 } catch(IllegalStateException e) {
                     throw e;
-                } catch (Exception e) {}
+                } catch (Exception ignored) {}
             }
         });
         Assertions.assertTrue(raised.getMessage().contains("Queue has been removed from cache"));

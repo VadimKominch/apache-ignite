@@ -4,8 +4,6 @@ import org.apache.ignite.*;
 import org.apache.ignite.binary.BinaryObject;
 import org.apache.ignite.cache.query.QueryCursor;
 import org.apache.ignite.cache.query.ScanQuery;
-import org.apache.ignite.configuration.CollectionConfiguration;
-import org.apache.ignite.internal.processors.cache.CacheStoppedException;
 import org.apache.ignite.services.ServiceConfiguration;
 import org.example.model.Person;
 import org.example.service.MyCustomService;
@@ -17,19 +15,16 @@ import org.springframework.stereotype.Component;
 import javax.cache.Cache;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 @Component
 public class IgniteCommandLineRunner implements CommandLineRunner {
     private final Ignite ignite;
-    private final Consumer<IgniteQueue<Integer>> actionToBeDone;
+    private final ResultService service;
 
-    public IgniteCommandLineRunner(Ignite ignite, Consumer<IgniteQueue<Integer>> actionToBeDone) {
+    public IgniteCommandLineRunner(Ignite ignite, ResultService service) {
         this.ignite = ignite;
-        this.actionToBeDone = actionToBeDone;
+        this.service = service;
     }
 
     private void computeTask() {
@@ -45,7 +40,10 @@ public class IgniteCommandLineRunner implements CommandLineRunner {
 
     private void deployService() {
         System.out.println("Topology nodes size is " + ignite.cluster().nodes().size());
+        System.out.println("Service MyCustomService is deployed into cluster");
         ignite.services().deploy(getServiceConfig());
+        boolean isRedeploy = ignite.services().serviceDescriptors().stream().anyMatch(el -> el.name().equals("eventHandlerService"));
+        System.out.println("Result of deploy is " + isRedeploy);
     }
 
     public void putBinaryToCache() {
@@ -81,62 +79,11 @@ public class IgniteCommandLineRunner implements CommandLineRunner {
         }
     }
 
-    private IgniteQueue<Integer> createQueue(String name) {
-        System.out.println("Creating queue or getting reference to it");
-        return ignite.queue(name,0,new CollectionConfiguration());
-    }
-
     @Override
     public void run(String... args) throws Exception {
 //        putBinaryToCache();
-//        deployService();
-        boolean recreate = false;
-        ARTExceptionLogManager logManager = new ARTExceptionLogManager(); // replace with ArtExceptionLogManager
-        IgniteQueue<Integer> intQueue = createQueue("TempQueue");
-
-        while (!Thread.currentThread().isInterrupted()) {
-            try {
-                Thread.sleep(5000);
-                actionToBeDone.accept(intQueue);
-                logManager.clear();
-            } catch (IllegalStateException e) {
-                if (e.getCause() instanceof CacheStoppedException exception) {
-//                    Collection<String> caches = ignite.cacheNames().stream().filter(el -> el.contains("datastructures")).toList();
-//                    ignite.resetLostPartitions(caches);
-                    System.out.println("Cache was stopped. Queue need to be recreated");
-                    recreate = true;
-                }
-
-                //in case of restart will always be false
-                if( !logManager.contains(e)) {
-                    if(intQueue.removed()) {
-                        recreate = true;
-                    }
-                    System.out.println(e.getMessage());
-                }
-                logManager.add(e);
-            } catch (Exception e) {
-                if(!logManager.contains(e)) {
-                    System.out.println(e.getClass());
-                    System.out.println(e.getMessage());
-                    logManager.add(e);
-                }
-                try {
-                    Thread.sleep(5000);
-                } catch (InterruptedException ie) {
-                    System.out.println("Before break");
-                    Thread.currentThread().interrupt();
-                    break;
-                }
-            }
-
-            if(recreate) {
-                Thread.sleep(15000);
-                intQueue = createQueue("TempQueue");
-                recreate = false;
-                logManager.clear();
-            }
-        }
+        deployService();
+        service.transferResult();
         System.out.println("Command line runner execution finished");
     }
 
@@ -151,25 +98,5 @@ public class IgniteCommandLineRunner implements CommandLineRunner {
         cfg.setMaxPerNodeCount(1);
         cfg.setService(new MyCustomService());
         return cfg;
-    }
-}
-
-class ARTExceptionLogManager {
-    private final Set<Exception> includedExceptions;
-
-    public ARTExceptionLogManager() {
-        this.includedExceptions = ConcurrentHashMap.newKeySet();
-    }
-
-    public void add(Exception ex) {
-        includedExceptions.add(ex);
-    }
-
-    public boolean contains(Exception ex) {
-        return includedExceptions.contains(ex);
-    }
-
-    public void clear() {
-        includedExceptions.clear();
     }
 }
