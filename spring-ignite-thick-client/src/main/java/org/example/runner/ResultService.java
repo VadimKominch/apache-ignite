@@ -1,5 +1,6 @@
 package org.example.runner;
 
+import jakarta.annotation.PreDestroy;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteQueue;
 import org.apache.ignite.configuration.CollectionConfiguration;
@@ -13,49 +14,52 @@ import java.util.function.Consumer;
 public class ResultService {
     private final Ignite ignite;
     private final Consumer<IgniteQueue<Integer>> actionToBeDone;
+    private IgniteQueue<Integer> intQueue;
 
     public ResultService(Ignite ignite, Consumer<IgniteQueue<Integer>> actionToBeDone) {
         this.ignite = ignite;
         this.actionToBeDone = actionToBeDone;
+        this.intQueue = createQueue();
     }
 
-    private IgniteQueue<Integer> createQueue(String name) {
+    private IgniteQueue<Integer> createQueue() {
         System.out.println("Creating queue or getting reference to it");
-//        ignite.services().serviceDescriptors().contains("123456789");
-        return ignite.queue(name,0,new CollectionConfiguration());
+        return ignite.queue("TempQueue",0,new CollectionConfiguration());
     }
 
-    public void transferResult() throws InterruptedException {
+    @PreDestroy
+    public void destroy() {
+        if(intQueue != null) {
+            System.out.println("Closing queue");
+            intQueue.close();
+        }
+    }
+
+    public void transferResult() {
         boolean recreate = false;
-        ConcurrentHashMap.KeySetView<Object, Boolean> logManager = ConcurrentHashMap.newKeySet(); // replace with ArtExceptionLogManager
-        IgniteQueue<Integer> intQueue = createQueue("TempQueue");
+        ConcurrentHashMap.KeySetView<Class<? extends Exception>, Boolean> logManager = ConcurrentHashMap.newKeySet(); // replace with ArtExceptionLogManager
 
         while (!Thread.currentThread().isInterrupted()) {
             try {
-                Thread.sleep(5000);
+                Thread.sleep(1000);
                 actionToBeDone.accept(intQueue);
                 logManager.clear();
             } catch (IllegalStateException e) {
-                if (e.getCause() instanceof CacheStoppedException exception) {
-                    // no active services was found
-                    boolean isRedeploy = ignite.services().serviceDescriptors().stream().anyMatch(el -> el.name().equals("eventHandlerService"));
-                    System.out.println("Cache was stopped. Queue need to be recreated");
-                    recreate = true;
-                }
-
-                //in case of restart will always be false
-                if( !logManager.contains(e)) {
-                    if(intQueue.removed()) {
+//                boolean isRedeploy = ignite.services().serviceDescriptors().stream().anyMatch(el -> el.name().equals("eventHandlerService"));
+                if(!logManager.contains(e.getClass())) {
+                    if (e.getCause() instanceof CacheStoppedException exception) {
+                        // no active services was found
+                        System.out.println("Cache was stopped. Queue need to be recreated");
                         recreate = true;
                     }
                     System.out.println(e.getMessage());
                 }
-                logManager.add(e);
+                logManager.add(e.getClass());
             } catch (Exception e) {
-                if(!logManager.contains(e)) {
+                if(!logManager.contains(e.getClass())) {
                     System.out.println(e.getClass());
                     System.out.println(e.getMessage());
-                    logManager.add(e);
+                    logManager.add(e.getClass());
                 }
                 try {
                     Thread.sleep(5000);
@@ -67,10 +71,10 @@ public class ResultService {
             }
 
             if(recreate) {
-                Thread.sleep(15000);
-                intQueue = createQueue("TempQueue");
+                System.out.println("Recreating queue from recreate flag");
+                intQueue = createQueue();
                 recreate = false;
-                logManager.clear();
+//                logManager.clear();
             }
         }
     }

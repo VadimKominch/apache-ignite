@@ -5,6 +5,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.time.LocalDateTime;
 import java.util.function.Consumer;
 
 @Configuration
@@ -14,7 +15,7 @@ public class ActionConfig {
     public Consumer<IgniteQueue<Integer>> consumerAction() {
             return (IgniteQueue<Integer> intQueue) -> {
                 int value = intQueue.take();
-                System.out.println("Received value from queue " + value);
+                System.out.println(LocalDateTime.now() + "Received value from queue " + value);
             };
     }
 
@@ -22,8 +23,9 @@ public class ActionConfig {
     @ConditionalOnProperty(prefix = "ignite", name = "action", havingValue = "producer")
     public Consumer<IgniteQueue<Integer>> producerAction() {
         return (IgniteQueue<Integer> intQueue) -> {
-            intQueue.add(123);
-            System.out.println("Added to queue: 123");
+            boolean result = intQueue.add(123);
+
+            System.out.println(LocalDateTime.now() + " added to queue: 123 with result " + result);
         };
     }
 

@@ -5,7 +5,6 @@ import org.apache.ignite.IgniteQueue;
 import org.apache.ignite.Ignition;
 import org.apache.ignite.configuration.ClientConnectorConfiguration;
 import org.apache.ignite.configuration.CollectionConfiguration;
-import org.apache.ignite.configuration.DeploymentMode;
 import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.internal.processors.cache.CacheStoppedException;
 import org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi;
@@ -18,18 +17,18 @@ public class ServerDisapearTest {
     private Ignite clientNode;
 
     @Test
-    public void testServerReconnection() {
+    public void testServerReconnection() throws InterruptedException {
         String serverNodeName = "Server-node-1";
         String clientNodeName = "Client-node-1";
 
         Thread serverThread = new Thread(()-> {
             Ignition.start(serverConfig(serverNodeName));
             try {
-                Thread.sleep(10000);
+                Thread.sleep(3000);
             } catch (InterruptedException e) {}
             Ignition.stop(serverNodeName, true);
             try {
-                Thread.sleep(10000);
+                Thread.sleep(3000);
             } catch (InterruptedException e) {}
             Ignition.start(serverConfig(serverNodeName));
         });
@@ -49,10 +48,11 @@ public class ServerDisapearTest {
             }
         });
         Assertions.assertInstanceOf(CacheStoppedException.class, raised.getCause());
+        serverThread.join();
     }
 
     @Test
-    public void testCacheWasClosed() {
+    public void testCacheWasClosed() throws InterruptedException {
         String serverNodeName = "Server-node-"+ Math.round(Math.random()*100);
         String clientNodeNameFirst = "Client-node-"+ Math.round(Math.random()*100);
 
@@ -79,27 +79,19 @@ public class ServerDisapearTest {
             }
         });
         Assertions.assertTrue(raised.getMessage().contains("Queue has been removed from cache"));
+        serverThread.join();
     }
 
     private IgniteConfiguration serverConfig(String instanceName) {
-        IgniteConfiguration serverConfig = new IgniteConfiguration();
-        serverConfig.setClientMode(false);
-        serverConfig.setIgniteInstanceName(instanceName);
-        serverConfig.setPeerClassLoadingEnabled(true);
-        serverConfig.setDeploymentMode(DeploymentMode.CONTINUOUS);
-        serverConfig.setDiscoverySpi(new TcpDiscoverySpi());
-        ClientConnectorConfiguration clientCfg = new ClientConnectorConfiguration();
-        serverConfig.setClientConnectorConfiguration(clientCfg);
-        return serverConfig;
+        return new IgniteConfiguration()
+            .setIgniteInstanceName(instanceName)
+            .setDiscoverySpi(new TcpDiscoverySpi())
+            .setClientConnectorConfiguration(new ClientConnectorConfiguration());
     }
 
     private IgniteConfiguration clientConfig(String instanceName) {
-        IgniteConfiguration cfg = new IgniteConfiguration();
-        cfg.setClientMode(true);
-        cfg.setDiscoverySpi(new TcpDiscoverySpi());
-        cfg.setDeploymentMode(DeploymentMode.CONTINUOUS);
-        cfg.setPeerClassLoadingEnabled(true);
-        cfg.setIgniteInstanceName(instanceName);
-        return cfg;
+        return new IgniteConfiguration()
+            .setClientMode(true)
+            .setIgniteInstanceName(instanceName);
     }
 }
