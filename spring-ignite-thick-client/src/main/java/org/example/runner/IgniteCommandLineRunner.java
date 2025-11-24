@@ -83,6 +83,7 @@ public class IgniteCommandLineRunner implements CommandLineRunner {
     public void run(String... args) throws Exception {
 //        putBinaryToCache();
         deployService();
+
         service.transferResult();
         System.out.println("Command line runner execution finished");
     }
